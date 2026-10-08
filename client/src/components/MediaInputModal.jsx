@@ -264,13 +264,26 @@ export function MediaInputModal({
             <>
               {/* Film special banner */}
               {type === 'film' && (
-                <div className="bg-purple-950/40 border border-zinc-700 rounded-md p-3.5 text-xs text-zinc-100 space-y-1.5">
+                <div className="bg-purple-950/40 border border-zinc-700 rounded-md p-3.5 text-xs text-zinc-100 space-y-2.5">
                   <div className="font-bold flex items-center gap-1.5 text-zinc-100">
                     <Sparkles className="w-4 h-4 text-zinc-100" />
-                    Ekran Açmadan Doğrudan Siteden Oynatma!
+                    Türk Siteleri ve 451 Koruması İçin Kesin Çözüm!
                   </div>
                   <p className="text-[11px] text-zinc-300 leading-relaxed">
-                    Film veya dizi izleme sitesinin linkini yapıştırın. Sistemimiz iframe korumalarını aşarak videoyu doğrudan siteden odadaki herkesle birlikte senkronize izlemenizi sağlar.
+                    Kaçak siteler bot koruması veya 451 hatası verebilir. Bunu aşmak için aşağıdaki butonu farenizle tutup tarayıcınızın <b>Yer İmleri (Favoriler) Çubuğuna</b> sürükleyip bırakın. 
+                  </p>
+                  <div className="flex items-center justify-center p-2">
+                    <a 
+                      href="javascript:(function(){let url='';let type='';const v=document.querySelector('video');if(v&&v.src){url=v.src;type=url.includes('.m3u8')?'hls':'video';}else if(v&&v.querySelector('source')){url=v.querySelector('source').src;type=url.includes('.m3u8')?'hls':'video';}if(!url){const iframes=Array.from(document.querySelectorAll('iframe'));for(let f of iframes){if(f.src&&!f.src.includes('google')&&!f.src.includes('ads')&&!f.src.includes('facebook')&&!f.src.includes('disqus')){url=f.src;type='embed';break;}}}if(url){const t=document.createElement('input');t.value=url;document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('✅ Başarılı! Filmin temiz linki kopyalandı.\n\nŞimdi kendi izleme odana git, %22Manuel Link / Film%22 kısmına yapıştır!');}else{alert('❌ Video bulunamadı! Lütfen filmi sitede tam ekranda veya normal oynatmaya başladıktan sonra bu butona tıkla.');}})();" 
+                      className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-full font-bold text-white shadow-lg cursor-grab active:cursor-grabbing border border-purple-400/50"
+                      title="Beni tutup yer imleri (favoriler) çubuğuna sürükle!"
+                      onClick={(e) => e.preventDefault()}
+                    >
+                      📺 Synchro Film Çek (Beni Sürükle)
+                    </a>
+                  </div>
+                  <p className="text-[10px] text-zinc-400 leading-relaxed">
+                    <b>Nasıl Kullanılır:</b> Filmi kendi sitenizde açın. Reklamları geçtikten sonra yer imlerindeki bu butona tıklayın. Link kopyalanacak, buraya yapıştıracaksınız.
                   </p>
                 </div>
               )}
