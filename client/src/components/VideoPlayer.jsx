@@ -45,7 +45,10 @@ export function VideoPlayer({
   const [volume, setVolume] = useState(0.9);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [useProxy, setUseProxy] = useState(false);
+  const [useProxy, setUseProxy] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.protocol === 'https:') return true;
+    return false;
+  });
   const [latencyInfo, setLatencyInfo] = useState({ buffer: 0, latency: 0 });
   const [hasError, setHasError] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -58,8 +61,13 @@ export function VideoPlayer({
   if (baseMediaUrl.startsWith('/api/')) {
     baseMediaUrl = `${serverBase}${baseMediaUrl}`;
   }
-  const streamUrl = useProxy && baseMediaUrl
-    ? (baseMediaUrl.includes('/api/proxy') ? baseMediaUrl : `${serverBase}/api/proxy?url=${encodeURIComponent(baseMediaUrl)}`)
+
+  // Auto proxy if on HTTPS and stream is HTTP (mixed content block) or if proxy requested
+  const isMixedContent = typeof window !== 'undefined' && window.location.protocol === 'https:' && baseMediaUrl.startsWith('http://');
+  const shouldProxy = (useProxy || isMixedContent) && !baseMediaUrl.includes('/api/proxy') && !!serverBase;
+
+  const streamUrl = shouldProxy
+    ? `${serverBase}/api/proxy?url=${encodeURIComponent(baseMediaUrl)}`
     : baseMediaUrl;
 
   // -------------------------------------------------------------
@@ -104,7 +112,14 @@ export function VideoPlayer({
         liveSyncDurationCount: 3,
         liveMaxLatencyDurationCount: 6,
         maxBufferLength: 15,
-        backBufferLength: 10
+        backBufferLength: 10,
+        xhrSetup: (xhr, loadUrl) => {
+          // Intercept any relative chunk URL that targets /api/proxy and route to serverBase
+          if (serverBase && (loadUrl.startsWith('/api/') || loadUrl.startsWith(window.location.origin + '/api/'))) {
+            const absoluteProxyUrl = loadUrl.replace(window.location.origin, serverBase);
+            xhr.open('GET', absoluteProxyUrl, true);
+          }
+        }
       });
 
       hls.loadSource(streamUrl);
@@ -315,14 +330,14 @@ export function VideoPlayer({
   return (
     <div 
       ref={containerRef}
-      className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-white/10 group select-none"
+      className="relative w-full aspect-video bg-black rounded-md overflow-hidden shadow-lg border border-zinc-800 group select-none"
     >
       {/* FLOATING REACTIONS OVERLAY */}
       <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
         {reactions.map((r) => (
           <div
             key={r.id}
-            className="absolute bottom-12 transition-all duration-1000 transform -translate-x-1/2 flex flex-col items-center animate-bounce"
+            className="absolute bottom-12 transition-all duration-1000 transform -translate-x-1/2 flex flex-col items-center"
             style={{
               left: `${r.x}%`,
               animation: 'floatUp 2.8s forwards cubic-bezier(0.1, 0.8, 0.3, 1)'
@@ -330,7 +345,7 @@ export function VideoPlayer({
           >
             <span className="text-4xl filter drop-shadow-lg">{r.emoji}</span>
             {r.sender && (
-              <span className="text-[10px] bg-black/60 px-2 py-0.5 rounded-full text-purple-300 font-semibold border border-purple-500/20">
+              <span className="text-[10px] bg-black/60 px-2 py-0.5 rounded-full text-zinc-100 font-semibold border border-zinc-700">
                 {r.sender}
               </span>
             )}
@@ -340,7 +355,7 @@ export function VideoPlayer({
 
       {/* SYNC INDICATOR BADGE */}
       {isSyncing && (
-        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-purple-600/90 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md shadow-lg animate-pulse">
+        <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 bg-purple-600/90 text-white text-xs px-3 py-1 rounded-full shadow-lg">
           <Sparkles className="w-3.5 h-3.5" />
           <span>Senkronize Ediliyor...</span>
         </div>
@@ -348,7 +363,7 @@ export function VideoPlayer({
 
       {/* ERROR NOTICE & CORS PROXY PROMPT */}
       {hasError && (
-        <div className="absolute inset-x-6 top-6 z-20 bg-red-950/90 border border-red-500/50 p-4 rounded-xl text-red-200 text-xs backdrop-blur-md flex items-center justify-between shadow-2xl">
+        <div className="absolute inset-x-6 top-6 z-20 bg-red-950/90 border border-zinc-700 p-4 rounded-md text-red-200 text-xs flex items-center justify-between shadow-lg">
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
             <span>{hasError}</span>
@@ -364,15 +379,15 @@ export function VideoPlayer({
 
       {/* STREAM STATS OVERLAY (FOR HLS LIVE / MATCH STREAMS) */}
       {isHls && (
-        <div className="absolute top-4 right-4 z-20 hidden group-hover:flex items-center gap-2 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[11px] text-slate-300">
-          <Activity className="w-3.5 h-3.5 text-emerald-400" />
+        <div className="absolute top-4 right-4 z-20 hidden group-hover:flex items-center gap-2 bg-black/60 px-3 py-1 rounded-full border border-zinc-800 text-[11px] text-zinc-300">
+          <Activity className="w-3.5 h-3.5 text-zinc-300" />
           <span>Buffer: <strong className="text-white">{latencyInfo.buffer}s</strong></span>
-          <span className="text-slate-600">•</span>
-          <span>Gecikme: <strong className="text-emerald-400">Düşük</strong></span>
+          <span className="text-zinc-600">•</span>
+          <span>Gecikme: <strong className="text-zinc-300">Düşük</strong></span>
           <button 
             onClick={() => setUseProxy(!useProxy)}
             className={`ml-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase transition ${
-              useProxy ? 'bg-purple-600 text-white' : 'bg-white/10 text-slate-400 hover:text-white'
+              useProxy ? 'bg-purple-600 text-white' : 'bg-white/10 text-zinc-400 hover:text-white'
             }`}
             title="CORS engelli spor ve IPTV linklerini proxy üzerinden çözer"
           >
@@ -391,8 +406,8 @@ export function VideoPlayer({
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
           />
-          <div className="absolute top-3 left-3 pointer-events-none bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-purple-500/30 text-[11px] text-purple-300 font-bold flex items-center gap-1.5 shadow-lg">
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+          <div className="absolute top-3 left-3 pointer-events-none bg-black/70 px-3 py-1 rounded-full border border-zinc-700 text-[11px] text-zinc-100 font-bold flex items-center gap-1.5 shadow-lg">
+            <Sparkles className="w-3.5 h-3.5 text-zinc-100" />
             <span>Doğrudan Film Sitesi Oynatıcı</span>
           </div>
         </div>
@@ -455,9 +470,9 @@ export function VideoPlayer({
               <button
                 onClick={handleTogglePlay}
                 disabled={!canControl}
-                className={`p-2 rounded-xl transition ${
+                className={`p-2 rounded-md transition ${
                   canControl 
-                    ? 'hover:bg-white/10 active:scale-95 text-purple-400' 
+                    ? 'hover:bg-white/10 active:scale-95 text-zinc-100' 
                     : 'opacity-40 cursor-not-allowed'
                 }`}
               >
@@ -465,19 +480,19 @@ export function VideoPlayer({
               </button>
 
               {media?.isLive ? (
-                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/30 border border-red-500/40 text-[11px] font-extrabold text-red-400 animate-pulse">
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/30 border border-zinc-700 text-[11px] font-extrabold text-red-400">
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
                   CANLI AKIŞ
                 </div>
               ) : (
-                <span className="text-xs font-mono text-slate-300">
+                <span className="text-xs font-mono text-zinc-300">
                   {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
               )}
 
               {/* Volume Slider */}
               <div className="flex items-center gap-2 group/vol">
-                <button onClick={toggleMute} className="p-1 hover:text-purple-400 transition">
+                <button onClick={toggleMute} className="p-1 hover:text-zinc-100 transition">
                   {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </button>
                 <input
@@ -493,7 +508,7 @@ export function VideoPlayer({
             </div>
 
             {/* Quick Reactions Bar inside Player */}
-            <div className="hidden sm:flex items-center gap-1 bg-black/40 backdrop-blur-md px-2 py-1 rounded-xl border border-white/10">
+            <div className="hidden sm:flex items-center gap-1 bg-black/40 px-2 py-1 rounded-md border border-zinc-800">
               {[
                 { emoji: '🔥', label: 'Ateş' },
                 { emoji: '⚽', label: 'Gol / Maç' },
@@ -522,8 +537,8 @@ export function VideoPlayer({
                   disabled={!canControl || media?.isLive}
                   className={`p-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1 transition ${
                     playbackRate !== 1 
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30' 
-                      : 'hover:bg-white/10 text-slate-300 hover:text-white'
+                      ? 'bg-purple-600 text-white shadow-md ' 
+                      : 'hover:bg-white/10 text-zinc-300 hover:text-white'
                   } ${(!canControl || media?.isLive) ? 'opacity-40 cursor-not-allowed' : ''}`}
                   title={canControl ? "Oynatma Hızı (Odadaki Herkeste Değişir)" : "Hız ayarı oda yöneticisi kontrolünde"}
                 >
@@ -532,8 +547,8 @@ export function VideoPlayer({
                 </button>
 
                 {showSpeedMenu && (
-                  <div className="absolute bottom-full mb-2 right-0 bg-[#121420] border border-white/10 rounded-xl p-1.5 shadow-2xl flex flex-col gap-1 min-w-[80px] z-50">
-                    <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold px-2 py-0.5 border-b border-white/5">
+                  <div className="absolute bottom-full mb-2 right-0 bg-[#121420] border border-zinc-800 rounded-md p-1.5 shadow-lg flex flex-col gap-1 min-w-[80px] z-50">
+                    <span className="text-[9px] uppercase tracking-wider text-zinc-400 font-bold px-2 py-0.5 border-b border-zinc-800">
                       Hız Seç
                     </span>
                     {[0.5, 0.75, 1, 1.25, 1.5, 2].map((rate) => (
@@ -544,7 +559,7 @@ export function VideoPlayer({
                         className={`px-2 py-1 rounded-lg text-xs font-mono font-bold text-left transition ${
                           playbackRate === rate
                             ? 'bg-purple-600 text-white'
-                            : 'hover:bg-white/10 text-slate-300'
+                            : 'hover:bg-white/10 text-zinc-300'
                         }`}
                       >
                         {rate}x {rate === 1 && <span className="text-[10px] opacity-60">(Norm)</span>}
@@ -559,7 +574,7 @@ export function VideoPlayer({
                   socket.emit('request-sync');
                   sounds.playPop();
                 }}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-purple-300 transition text-xs flex items-center gap-1"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-zinc-300 hover:text-zinc-100 transition text-xs flex items-center gap-1"
                 title="Yayınla Yeniden Senkron Ol"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
@@ -568,7 +583,7 @@ export function VideoPlayer({
 
               <button
                 onClick={toggleFullscreen}
-                className="p-1.5 hover:bg-white/10 rounded-lg text-slate-300 hover:text-white transition"
+                className="p-1.5 hover:bg-white/10 rounded-lg text-zinc-300 hover:text-white transition"
                 title="Tam Ekran"
               >
                 {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}

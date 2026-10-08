@@ -41,15 +41,15 @@ export function VoiceRoom({
   const activeAdminUser = users.find(u => u.id === activeAdminUserId);
 
   return (
-    <div className="bg-[#0f111a]/90 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 shadow-xl relative">
+    <div className="bg-[#0f111a]/90 rounded-md p-3.5 border border-zinc-800 shadow-md relative">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+          <Radio className="w-4 h-4 text-zinc-300" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
             Ses Kanalı & Katılımcılar ({users.length})
           </h3>
           {isHost && (
-            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="bg-amber-500/20 text-amber-300 border border-zinc-700 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
               <Crown className="w-3 h-3 fill-current" />
               Oda Yöneticisisiniz
             </span>
@@ -58,7 +58,7 @@ export function VoiceRoom({
         <button
           onClick={() => setShowSliders(!showSliders)}
           className={`p-1.5 rounded-lg text-xs transition flex items-center gap-1 ${
-            showSliders ? 'bg-purple-600/30 text-purple-300' : 'text-slate-400 hover:text-slate-200'
+            showSliders ? 'hover:bg-zinc-700 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
           }`}
           title="Kişisel Ses Seviyesi Ayarları"
         >
@@ -78,10 +78,10 @@ export function VoiceRoom({
           return (
             <div
               key={user.id}
-              className={`relative flex flex-col items-center p-2.5 rounded-xl border transition-all ${
+              className={`relative flex flex-col items-center p-2.5 rounded-md border transition-all ${
                 isSpeaking
-                  ? 'bg-emerald-950/30 border-emerald-500/60 shadow-lg shadow-emerald-500/20'
-                  : 'bg-white/5 border-white/5 hover:border-white/15'
+                  ? 'bg-emerald-950/30 border-zinc-700 shadow-lg '
+                  : 'bg-white/5 border-zinc-800 hover:border-white/15'
               }`}
             >
               {/* Host Admin Trigger Button for Other Users */}
@@ -89,7 +89,7 @@ export function VoiceRoom({
                 <button
                   type="button"
                   onClick={() => setActiveAdminUserId(user.id)}
-                  className="absolute top-1.5 right-1.5 p-1 rounded-md bg-white/10 hover:bg-purple-600 text-slate-300 hover:text-white transition shadow text-xs"
+                  className="absolute top-1.5 right-1.5 p-1 rounded-md bg-white/10 hover:bg-purple-600 text-zinc-300 hover:text-white transition shadow text-xs"
                   title="Yönetici İzinleri & İşlemler"
                 >
                   <MoreVertical className="w-3 h-3" />
@@ -100,7 +100,7 @@ export function VoiceRoom({
               <div className="relative mt-1">
                 <div
                   className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-transform ${
-                    isSpeaking ? 'scale-110 ring-4 ring-emerald-500 ring-offset-2 ring-offset-slate-950 animate-pulse' : ''
+                    isSpeaking ? 'scale-110 ring-4 ring-emerald-500 ring-offset-2 ring-offset-slate-950 ' : ''
                   }`}
                   style={{
                     backgroundColor: `${user.color || '#8b5cf6'}20`,
@@ -119,7 +119,7 @@ export function VoiceRoom({
 
                 {/* Screen Sharing Indicator */}
                 {user.isScreenSharing && (
-                  <span className="absolute -bottom-1 -left-1 bg-indigo-600 p-0.5 rounded-full text-white shadow animate-pulse">
+                  <span className="absolute -bottom-1 -left-1 bg-indigo-600 p-0.5 rounded-full text-white shadow">
                     <Monitor className="w-3 h-3" />
                   </span>
                 )}
@@ -131,7 +131,7 @@ export function VoiceRoom({
                   className="text-xs font-bold truncate max-w-full"
                   style={{ color: user.color || '#e2e8f0' }}
                 >
-                  {user.nickname} {isSelf && <span className="text-slate-400 font-normal">(Sen)</span>}
+                  {user.nickname} {isSelf && <span className="text-zinc-400 font-normal">(Sen)</span>}
                 </p>
 
                 {/* Status Icons & Restrictions */}
@@ -141,7 +141,7 @@ export function VoiceRoom({
                       <MicOff className="w-3 h-3" />
                     </span>
                   ) : (
-                    <span className="text-emerald-400" title="Mikrofon Açık">
+                    <span className="text-zinc-300" title="Mikrofon Açık">
                       <Mic className="w-3 h-3" />
                     </span>
                   )}
@@ -164,7 +164,7 @@ export function VoiceRoom({
                     </span>
                   )}
                   {permissions.canControlMedia && !user.isHost && (
-                    <span className="text-purple-400" title="Medya Kontrol Yetkisi Var">
+                    <span className="text-zinc-100" title="Medya Kontrol Yetkisi Var">
                       <PlayCircle className="w-3 h-3" />
                     </span>
                   )}
@@ -173,8 +173,8 @@ export function VoiceRoom({
 
               {/* Volume Slider for Remote Peers */}
               {!isSelf && showSliders && (
-                <div className="mt-2 w-full pt-1 border-t border-white/10 flex items-center gap-1">
-                  <Volume2 className="w-2.5 h-2.5 text-slate-400" />
+                <div className="mt-2 w-full pt-1 border-t border-zinc-800 flex items-center gap-1">
+                  <Volume2 className="w-2.5 h-2.5 text-zinc-400" />
                   <input
                     type="range"
                     min="0"
@@ -194,23 +194,23 @@ export function VoiceRoom({
 
       {/* Host Management Modal / Popover for Selected User */}
       {activeAdminUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-[#121422] border border-white/10 rounded-2xl p-5 max-w-sm w-full shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 animate-in fade-in duration-150">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 max-w-sm w-full shadow-lg space-y-4">
             
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">{activeAdminUser.avatar || '🎮'}</span>
                 <div>
                   <h4 className="text-sm font-bold text-white leading-tight">
                     {activeAdminUser.nickname}
                   </h4>
-                  <p className="text-[11px] text-slate-400">Yönetici Kontrol Paneli</p>
+                  <p className="text-[11px] text-zinc-400">Yönetici Kontrol Paneli</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setActiveAdminUserId(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -218,17 +218,17 @@ export function VoiceRoom({
 
             {/* Permission Toggles */}
             <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+              <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider block">
                 Kullanıcı İzinleri:
               </span>
 
               {/* Voice Permission */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
+              <div className="flex items-center justify-between p-2.5 rounded-md bg-white/5 border border-zinc-800">
                 <div className="flex items-center gap-2">
-                  <Mic className="w-4 h-4 text-emerald-400" />
+                  <Mic className="w-4 h-4 text-zinc-300" />
                   <div>
-                    <div className="text-xs font-bold text-slate-200">Sesli Sohbet</div>
-                    <div className="text-[10px] text-slate-400">Konuşma ve mikrofon izni</div>
+                    <div className="text-xs font-bold text-zinc-200">Sesli Sohbet</div>
+                    <div className="text-[10px] text-zinc-400">Konuşma ve mikrofon izni</div>
                   </div>
                 </div>
                 <button
@@ -239,8 +239,8 @@ export function VoiceRoom({
                   }}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
                     activeAdminUser.permissions?.canVoice !== false
-                      ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-red-600/30 text-red-300 border border-red-500/40'
+                      ? 'hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
+                      : 'bg-red-600/30 text-red-300 border border-zinc-700'
                   }`}
                 >
                   {activeAdminUser.permissions?.canVoice !== false ? 'İzin Verildi' : 'Engellendi'}
@@ -248,12 +248,12 @@ export function VoiceRoom({
               </div>
 
               {/* Chat Permission */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
+              <div className="flex items-center justify-between p-2.5 rounded-md bg-white/5 border border-zinc-800">
                 <div className="flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-purple-400" />
+                  <MessageSquare className="w-4 h-4 text-zinc-100" />
                   <div>
-                    <div className="text-xs font-bold text-slate-200">Metin Sohbeti</div>
-                    <div className="text-[10px] text-slate-400">Oda chatine mesaj yazma</div>
+                    <div className="text-xs font-bold text-zinc-200">Metin Sohbeti</div>
+                    <div className="text-[10px] text-zinc-400">Oda chatine mesaj yazma</div>
                   </div>
                 </div>
                 <button
@@ -264,8 +264,8 @@ export function VoiceRoom({
                   }}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
                     activeAdminUser.permissions?.canChat !== false
-                      ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-red-600/30 text-red-300 border border-red-500/40'
+                      ? 'hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
+                      : 'bg-red-600/30 text-red-300 border border-zinc-700'
                   }`}
                 >
                   {activeAdminUser.permissions?.canChat !== false ? 'İzin Verildi' : 'Engellendi'}
@@ -273,12 +273,12 @@ export function VoiceRoom({
               </div>
 
               {/* Media Control Permission */}
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/5 border border-white/5">
+              <div className="flex items-center justify-between p-2.5 rounded-md bg-white/5 border border-zinc-800">
                 <div className="flex items-center gap-2">
                   <PlayCircle className="w-4 h-4 text-amber-400" />
                   <div>
-                    <div className="text-xs font-bold text-slate-200">Medya Kontrolü</div>
-                    <div className="text-[10px] text-slate-400">Durdurma/oynatma & link değiştirme</div>
+                    <div className="text-xs font-bold text-zinc-200">Medya Kontrolü</div>
+                    <div className="text-[10px] text-zinc-400">Durdurma/oynatma & link değiştirme</div>
                   </div>
                 </div>
                 <button
@@ -289,8 +289,8 @@ export function VoiceRoom({
                   }}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
                     activeAdminUser.permissions?.canControlMedia
-                      ? 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'
-                      : 'bg-white/10 text-slate-400 border border-white/10'
+                      ? 'hover:bg-zinc-700 text-zinc-100 border border-zinc-700'
+                      : 'bg-white/10 text-zinc-400 border border-zinc-800'
                   }`}
                 >
                   {activeAdminUser.permissions?.canControlMedia ? 'Yetkili' : 'Yetkisiz'}
@@ -299,7 +299,7 @@ export function VoiceRoom({
             </div>
 
             {/* Critical Actions: Host Transfer & Kick */}
-            <div className="pt-2 border-t border-white/10 space-y-2">
+            <div className="pt-2 border-t border-zinc-800 space-y-2">
               <button
                 type="button"
                 onClick={() => {
@@ -308,7 +308,7 @@ export function VoiceRoom({
                     setActiveAdminUserId(null);
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-xs font-bold transition"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-zinc-700 text-xs font-bold transition"
               >
                 <Crown className="w-4 h-4 fill-current" />
                 <span>Oda Yöneticiliğini (Host) Devret</span>
@@ -322,7 +322,7 @@ export function VoiceRoom({
                     setActiveAdminUserId(null);
                   }
                 }}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-bold transition"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-zinc-700 text-xs font-bold transition"
               >
                 <UserX className="w-4 h-4" />
                 <span>Odadan At (Kick)</span>

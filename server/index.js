@@ -145,20 +145,24 @@ function handleProxyStream(targetUrl, req, res, hop = 0) {
           proxyRes.on('end', () => {
             if (res.headersSent) return;
             const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+            const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+            const host = req.get('host');
+            const proxyPrefix = `${proto}://${host}/api/proxy?url=`;
+
             const rewrittenLines = m3u8Data.split('\n').map((line) => {
               const trimmed = line.trim();
               if (!trimmed || trimmed.startsWith('#')) {
                 if (trimmed.startsWith('#EXT-X-KEY') && trimmed.includes('URI="')) {
                   return trimmed.replace(/URI="([^"]+)"/, (match, uri) => {
                     const fullUri = uri.startsWith('http') ? uri : new URL(uri, baseUrl).href;
-                    return `URI="/api/proxy?url=${encodeURIComponent(fullUri)}"`;
+                    return `URI="${proxyPrefix}${encodeURIComponent(fullUri)}"`;
                   });
                 }
                 return line;
               }
 
               const segmentUrl = trimmed.startsWith('http') ? trimmed : new URL(trimmed, baseUrl).href;
-              return `/api/proxy?url=${encodeURIComponent(segmentUrl)}`;
+              return `${proxyPrefix}${encodeURIComponent(segmentUrl)}`;
             });
 
             res.send(rewrittenLines.join('\n'));

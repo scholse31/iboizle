@@ -34,17 +34,17 @@ export function ChatPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0d0f18]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-2xl overflow-hidden">
+    <div className="flex flex-col h-full bg-[#0d0f18]/90 rounded-md border border-zinc-800 shadow-lg overflow-hidden">
       
       {/* Chat Header */}
-      <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+      <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between bg-white/[0.02]">
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-purple-400" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
+          <MessageSquare className="w-4 h-4 text-zinc-100" />
+          <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-200">
             Canlı Oda Sohbeti
           </h3>
         </div>
-        <span className="text-[11px] text-slate-400 bg-white/5 px-2 py-0.5 rounded-full font-mono">
+        <span className="text-[11px] text-zinc-400 bg-white/5 px-2 py-0.5 rounded-full font-mono">
           {messages.filter(m => !m.isSystem).length} mesaj
         </span>
       </div>
@@ -55,7 +55,7 @@ export function ChatPanel({
           if (msg.isSystem) {
             return (
               <div key={msg.id} className="flex justify-center my-1.5">
-                <span className="text-[11px] bg-purple-950/40 text-purple-300 border border-purple-500/20 px-3 py-1 rounded-full text-center max-w-[90%]">
+                <span className="text-[11px] bg-purple-950/40 text-zinc-100 border border-zinc-700 px-3 py-1 rounded-full text-center max-w-[90%]">
                   {msg.text}
                 </span>
               </div>
@@ -73,11 +73,11 @@ export function ChatPanel({
                   >
                     {msg.sender}
                   </span>
-                  <span className="text-[10px] text-slate-500 leading-none font-mono">
+                  <span className="text-[10px] text-zinc-500 leading-none font-mono">
                     {msg.timestamp}
                   </span>
                 </div>
-                <div className="mt-1 text-xs text-slate-200 bg-white/5 border border-white/5 rounded-xl px-3 py-2 rounded-tl-none break-words leading-relaxed group-hover:border-white/10 transition">
+                <div className="mt-1 text-xs text-zinc-200 bg-white/5 border border-zinc-800 rounded-md px-3 py-2 rounded-tl-none break-words leading-relaxed group-hover:border-zinc-800 transition">
                   {msg.text}
                 </div>
               </div>
@@ -89,9 +89,9 @@ export function ChatPanel({
 
       {/* Quick Reaction Tray */}
       {canChat && (
-        <div className="px-3 py-1.5 bg-black/40 border-t border-white/5 flex items-center gap-1 overflow-x-auto">
-          <span className="text-[10px] text-slate-500 shrink-0 mr-1 flex items-center gap-0.5">
-            <Sparkles className="w-3 h-3 text-purple-400" /> Hızlı:
+        <div className="px-3 py-1.5 bg-black/40 border-t border-zinc-800 flex items-center gap-1 overflow-x-auto">
+          <span className="text-[10px] text-zinc-500 shrink-0 mr-1 flex items-center gap-0.5">
+            <Sparkles className="w-3 h-3 text-zinc-100" /> Hızlı:
           </span>
           {QUICK_EMOJIS.map((emoji) => (
             <button
@@ -107,19 +107,19 @@ export function ChatPanel({
       )}
 
       {/* Chat Input */}
-      <form onSubmit={handleSubmit} className="p-3 bg-white/[0.02] border-t border-white/10 flex items-center gap-2">
+      <form onSubmit={handleSubmit} className="p-3 bg-white/[0.02] border-t border-zinc-800 flex items-center gap-2">
         <input
           type="text"
           value={inputText}
           disabled={!canChat}
           onChange={(e) => setInputText(e.target.value)}
           placeholder={canChat ? "Mesajını yaz veya emoji gönder..." : "Yönetici mesaj gönderme izninizi kapattı."}
-          className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/80 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 bg-white/5 border border-zinc-800 rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-zinc-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <button
           type="submit"
           disabled={!inputText.trim() || !canChat}
-          className="p-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:hover:bg-purple-600 text-white transition shadow-md shadow-purple-600/20 disabled:cursor-not-allowed"
+          className="p-2.5 rounded-md bg-purple-600 hover:bg-purple-500 disabled:opacity-40 disabled:hover:bg-purple-600 text-white transition shadow-md disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
         </button>

@@ -86,10 +86,10 @@ export default function App() {
   // Floating Reactions
   const [reactions, setReactions] = useState([]);
   const [kickedInfo, setKickedInfo] = useState(null);
-
-  // Toast notification
+  const [isConnected, setIsConnected] = useState(socket.connected);
   const [toast, setToast] = useState(null);
 
+  // Toast notification
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
@@ -125,13 +125,33 @@ export default function App() {
       }
     });
 
-    // Join room
-    socket.emit('join-room', {
-      roomId,
-      nickname: currentUser.nickname,
-      avatar: currentUser.avatar,
-      color: currentUser.color
-    });
+    const handleConnect = () => {
+      setIsConnected(true);
+      socket.emit('join-room', {
+        roomId,
+        nickname: currentUser.nickname,
+        avatar: currentUser.avatar,
+        color: currentUser.color
+      });
+    };
+
+    const handleDisconnect = () => {
+      setIsConnected(false);
+    };
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+
+    // Join room if already connected
+    if (socket.connected) {
+      setIsConnected(true);
+      socket.emit('join-room', {
+        roomId,
+        nickname: currentUser.nickname,
+        avatar: currentUser.avatar,
+        color: currentUser.color
+      });
+    }
 
     // Listeners
     socket.on('room-state', (initialRoom) => {
@@ -246,6 +266,8 @@ export default function App() {
     });
 
     return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
       socket.off('room-state');
       socket.off('user-joined');
       socket.off('user-left');
@@ -370,13 +392,13 @@ export default function App() {
   const canChat = currentUser.isHost || currentUserInRoom?.permissions?.canChat !== false;
 
   return (
-    <div className="min-h-screen bg-[#07080c] text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans">
       
       {/* Kicked From Room Overlay */}
       {kickedInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in">
-          <div className="bg-[#121422] border border-red-500/50 rounded-2xl p-6 max-w-md w-full shadow-2xl text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-red-600/20 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto text-3xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 animate-in fade-in">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-md p-6 max-w-md w-full shadow-lg text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-red-600/20 border border-zinc-700 text-red-400 flex items-center justify-center mx-auto text-3xl">
               ⛔
             </div>
             <div>
@@ -388,7 +410,7 @@ export default function App() {
                 const newRoom = `canli-${Math.random().toString(36).substring(2, 7)}`;
                 window.location.search = `?room=${newRoom}`;
               }}
-              className="w-full py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg shadow-purple-600/30"
+              className="w-full py-2.5 px-4 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition shadow-lg"
             >
               Yeni Bir Odaya Katıl
             </button>
@@ -398,14 +420,32 @@ export default function App() {
 
       {/* Toast popup */}
       {toast && (
-        <div className={`fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold backdrop-blur-md border animate-in slide-in-from-bottom duration-200 ${
+        <div className={`fixed bottom-6 right-6 z-50 px-4 py-2.5 rounded-md shadow-lg text-xs font-semibold  border animate-in slide-in-from-bottom duration-200 ${
           toast.type === 'success' 
-            ? 'bg-emerald-950/90 text-emerald-300 border-emerald-500/40' 
+            ? 'bg-emerald-950/90 text-zinc-100 border-zinc-700' 
             : toast.type === 'error'
-              ? 'bg-red-950/90 text-red-300 border-red-500/40'
-              : 'bg-purple-950/90 text-purple-300 border-purple-500/40'
+              ? 'bg-red-950/90 text-red-300 border-zinc-700'
+              : 'bg-purple-950/90 text-zinc-100 border-zinc-700'
         }`}>
           {toast.message}
+        </div>
+      )}
+
+      {/* Disconnected Notice Banner */}
+      {!isConnected && (
+        <div className="bg-red-950/90 border-b border-zinc-700 px-4 py-2 text-xs text-red-200 flex items-center justify-between gap-3 flex-wrap shadow-md z-50">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping shrink-0"></span>
+            <span>
+              <strong>Sunucuya Bağlanılamadı!</strong> Chat, sesli sohbet, host yetkileri ve IPTV için backend sunucusu gereklidir.
+            </span>
+          </div>
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition shadow shrink-0"
+          >
+            Render Backend Linkini Ayarla
+          </button>
         </div>
       )}
 
@@ -413,6 +453,7 @@ export default function App() {
       <Navbar
         room={room}
         currentUser={currentUser}
+        isConnected={isConnected}
         isMicActive={isMicActive}
         isMuted={isMuted}
         isDeafened={isDeafened}
@@ -449,17 +490,17 @@ export default function App() {
             />
 
             {/* Stream Title Bar & Quick Actions */}
-            <div className="bg-[#0f111a]/80 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex items-center justify-between gap-3 flex-wrap shadow-lg">
+            <div className="bg-zinc-900 p-4 rounded-md border border-zinc-800 flex items-center justify-between gap-3 flex-wrap shadow-lg">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2.5 rounded-xl bg-purple-600/20 border border-purple-500/30 text-purple-400">
+                <div className="p-2.5 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-100">
                   <Tv className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
                   <h1 className="text-sm sm:text-base font-bold text-white truncate max-w-[500px]">
                     {room.currentMedia?.title || 'Medya Başlığı'}
                   </h1>
-                  <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
-                    <span className="uppercase text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white/5 border border-white/5">
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-zinc-400">
+                    <span className="uppercase text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white/5 border border-zinc-800">
                       {room.currentMedia?.type || 'hls'}
                     </span>
                     <span>•</span>
@@ -473,23 +514,23 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsIptvOpen(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                  className="px-3.5 py-1.5 rounded-md bg-zinc-800 hover:hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
                 >
-                  <Radio className="w-3.5 h-3.5 animate-pulse text-emerald-400" />
+                  <Radio className="w-3.5 h-3.5 text-zinc-300" />
                   <span>IPTV & Canlı Maçlar</span>
                 </button>
                 <button
                   onClick={() => setIsMediaModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 text-xs font-semibold flex items-center gap-1.5 transition"
+                  className="px-3.5 py-1.5 rounded-md bg-zinc-800 hover:hover:bg-zinc-700 text-zinc-100 border border-zinc-700 text-xs font-semibold flex items-center gap-1.5 transition"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Manuel Link / Film</span>
                 </button>
                 <button
                   onClick={() => setIsInviteModalOpen(true)}
-                  className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs font-semibold flex items-center gap-1.5 transition"
+                  className="px-3.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-zinc-300 border border-zinc-800 text-xs font-semibold flex items-center gap-1.5 transition"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-purple-400" />
+                  <Share2 className="w-3.5 h-3.5 text-zinc-100" />
                   <span>Davet Linki</span>
                 </button>
               </div>

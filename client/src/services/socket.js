@@ -17,8 +17,8 @@ export function getServerUrl() {
     return 'http://localhost:3001';
   }
 
-  // 4. Default to current host
-  return typeof window !== 'undefined' ? window.location.origin : '';
+  // 4. Default to Render backend
+  return 'https://iboizle.onrender.com';
 }
 
 export const socket = io(getServerUrl(), {

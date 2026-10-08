@@ -20,24 +20,24 @@ export function PlaylistModal({
   const getTypeIcon = (type) => {
     switch (type) {
       case 'youtube': return <YoutubeIcon />;
-      case 'hls': return <Radio className="w-4 h-4 text-emerald-400" />;
+      case 'hls': return <Radio className="w-4 h-4 text-zinc-300" />;
       default: return <Film className="w-4 h-4 text-indigo-400" />;
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="bg-[#10121d] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+      <div className="bg-[#10121d] border border-zinc-800 rounded-md w-full max-w-lg overflow-hidden shadow-lg">
         
         {/* Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <div className="p-4 border-b border-zinc-800 flex items-center justify-between bg-white/[0.02]">
           <div className="flex items-center gap-2">
-            <ListVideo className="w-5 h-5 text-purple-400" />
+            <ListVideo className="w-5 h-5 text-zinc-100" />
             <h2 className="text-sm font-bold text-white">Oynatma Listesi Sırası ({playlist.length})</h2>
           </div>
           <button 
             onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
+            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -46,27 +46,27 @@ export function PlaylistModal({
         {/* List Content */}
         <div className="p-4 max-h-[400px] overflow-y-auto space-y-2">
           {playlist.length === 0 ? (
-            <div className="text-center py-10 text-slate-500 text-xs">
+            <div className="text-center py-10 text-zinc-500 text-xs">
               Oynatma listesi boş. "Medya Ekle" kısmından yeni linkler ekleyebilirsiniz.
             </div>
           ) : (
             playlist.map((item, index) => (
               <div 
                 key={item.id}
-                className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/15 transition group"
+                className="flex items-center justify-between p-3 rounded-md bg-white/5 border border-zinc-800 hover:border-white/15 transition group"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-xs font-mono text-slate-500 w-4 text-right">
+                  <span className="text-xs font-mono text-zinc-500 w-4 text-right">
                     {index + 1}
                   </span>
                   <div className="p-2 rounded-lg bg-white/5">
                     {getTypeIcon(item.type)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-200 truncate max-w-[260px]">
+                    <p className="text-xs font-semibold text-zinc-200 truncate max-w-[260px]">
                       {item.title}
                     </p>
-                    <span className="text-[10px] text-slate-500 block truncate">
+                    <span className="text-[10px] text-zinc-500 block truncate">
                       Ekleyen: {item.addedBy}
                     </span>
                   </div>
@@ -76,7 +76,7 @@ export function PlaylistModal({
                   <button
                     onClick={() => onPlayItem(item.id)}
                     disabled={!canControl}
-                    className="p-2 rounded-lg bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white transition disabled:opacity-30"
+                    className="p-2 rounded-lg bg-zinc-800 hover:bg-purple-600 text-zinc-100 hover:text-white transition disabled:opacity-30"
                     title="Şimdi Oynat"
                   >
                     <Play className="w-3.5 h-3.5 fill-current" />
