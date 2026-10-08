@@ -43,24 +43,3 @@ Watch2Gether benzeri, ancak canlı maçlar, IPTV, film siteleri, YouTube ve sıf
 
 ---
 
-## 🛠️ Çalıştırma Talimatları
-
-Projeyi başlatmak için terminalde:
-
-```bash
-# Hem sunucu (port 3001) hem istemciyi (port 5173) aynı anda başlatır:
-npm run dev
-```
-
-- **Frontend Arayüzü:** [http://localhost:5173](http://localhost:5173)
-- **Backend Sunucusu:** [http://localhost:3001](http://localhost:3001)
-
----
-
-## ⚽ IPTV Bağlantınızı Kullanma
-
-1. Tarayıcınızda [http://localhost:5173](http://localhost:5173) adresine gidin.
-2. Üst menüdeki veya oynatıcı altındaki **"IPTV & Canlı Maçlar"** butonuna tıklayın.
-3. Bağlantınız (`http://fixtv123.xyz:2095/get.php?username=necati29&password=20082010hasanmete&type=m3u`) otomatik olarak yüklü gelecektir.
-4. İster kategori butonlarından (`beIN SPORTS`, `EXXEN`, `S SPORT` vb.) filtreleyin, ister arama kutusuna kanal adı yazın.
-5. İstediğiniz kanalın yanındaki **"Odaya Aç"** butonuna basarak tüm odaya anında canlı yayını başlatın!
