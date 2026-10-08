@@ -1,0 +1,24 @@
+{
+  "name": "synchro-watchtogether",
+  "version": "1.0.0",
+  "description": "Ultra Low-Latency Watch Party with HLS, Sports Streams, Screen Share & Voice Chat",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "server": "node server/index.js",
+    "client": "npm --prefix client run dev",
+    "build:client": "npm --prefix client run build",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "keywords": ["watchtogether", "hls", "webrtc", "screenshare", "voicechat"],
+  "author": "ratman4080",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "concurrently": "^9.1.2",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.6",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.4"
+  }
+}
