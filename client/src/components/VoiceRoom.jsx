@@ -25,6 +25,9 @@ export function VoiceRoom({
   currentUserId, 
   speakingUsers = new Set(),
   isHost = false,
+  isMicActive = false,
+  isMuted = false,
+  onToggleMic,
   onTransferHost,
   onKickUser,
   onSetUserPermission
@@ -42,7 +45,7 @@ export function VoiceRoom({
 
   return (
     <div className="bg-[#0f111a]/90 rounded-md p-3.5 border border-zinc-800 shadow-md relative">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Radio className="w-4 h-4 text-zinc-300" />
           <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
@@ -55,16 +58,49 @@ export function VoiceRoom({
             </span>
           )}
         </div>
-        <button
-          onClick={() => setShowSliders(!showSliders)}
-          className={`p-1.5 rounded-lg text-xs transition flex items-center gap-1 ${
-            showSliders ? 'hover:bg-zinc-700 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
-          }`}
-          title="Kişisel Ses Seviyesi Ayarları"
-        >
-          <Sliders className="w-3.5 h-3.5" />
-          <span className="text-[10px]">Ses Seviyeleri</span>
-        </button>
+
+        <div className="flex items-center gap-2">
+          {onToggleMic && (
+            <button
+              onClick={onToggleMic}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 border shadow-sm ${
+                !isMicActive 
+                  ? 'bg-purple-600 hover:bg-purple-500 text-white border-purple-400' 
+                  : isMuted 
+                    ? 'bg-red-500/20 text-red-400 border-red-500/40' 
+                    : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              }`}
+            >
+              {!isMicActive ? (
+                <>
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Sese Katıl</span>
+                </>
+              ) : isMuted ? (
+                <>
+                  <MicOff className="w-3.5 h-3.5" />
+                  <span>Mikrofon Aç</span>
+                </>
+              ) : (
+                <>
+                  <Mic className="w-3.5 h-3.5" />
+                  <span>Konuşuyorsunuz</span>
+                </>
+              )}
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowSliders(!showSliders)}
+            className={`p-1.5 rounded-lg text-xs transition flex items-center gap-1 ${
+              showSliders ? 'hover:bg-zinc-700 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'
+            }`}
+            title="Kişisel Ses Seviyesi Ayarları"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span className="text-[10px] hidden sm:inline">Ses Seviyeleri</span>
+          </button>
+        </div>
       </div>
 
       {/* Users Voice Grid */}

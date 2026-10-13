@@ -69,6 +69,8 @@ export default function App() {
 
   // Voice & Screen share states
   const [isMicActive, setIsMicActive] = useState(false);
+  const isMicActiveRef = useRef(false);
+  isMicActiveRef.current = isMicActive;
   const [isMuted, setIsMuted] = useState(false);
   const [isDeafened, setIsDeafened] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -254,7 +256,7 @@ export default function App() {
         users: prev.users.map((u) => (u.id === userId ? { ...u, permissions } : u))
       }));
       if (userId === socket.id) {
-        if (permissions.canVoice === false && isMicActive) {
+        if (permissions.canVoice === false && isMicActiveRef.current) {
           webrtc.toggleMute(true);
           setIsMuted(true);
           showToast('Yönetici sesli konuşma yetkinizi kapattı.', 'error');
@@ -284,7 +286,7 @@ export default function App() {
       socket.off('user-permission-updated');
       webrtc.cleanup();
     };
-  }, [roomId, isMicActive]);
+  }, [roomId]);
 
   // Save current user preferences
   const handleUpdateUser = (updated) => {
@@ -542,6 +544,9 @@ export default function App() {
               currentUserId={socket.id}
               speakingUsers={speakingUsers}
               isHost={currentUser.isHost}
+              isMicActive={isMicActive}
+              isMuted={isMuted}
+              onToggleMic={handleToggleMic}
               onTransferHost={handleTransferHost}
               onKickUser={handleKickUser}
               onSetUserPermission={handleSetUserPermission}
