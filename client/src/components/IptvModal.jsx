@@ -11,12 +11,39 @@ import {
   Film, 
   RefreshCw,
   Trophy,
-  Filter
+  Filter,
+  Flame,
+  Globe
 } from 'lucide-react';
 import { sounds } from '../services/soundEffects';
 import { getServerUrl } from '../services/socket';
 
-const DEFAULT_IPTV_URL = 'http://fixtv123.xyz:2095/get.php?username=necati29&password=20082010hasanmete&type=m3u';
+const PRESET_SOURCES = [
+  {
+    id: 'tr',
+    title: '🇹🇷 Türkiye Canlı TV (170+ Kanal)',
+    subtitle: 'A Spor, 24 TV, A2, Ulusal & Yerel Kanallar - Kesintisiz 1080p',
+    url: 'https://iptv-org.github.io/iptv/countries/tr.m3u'
+  },
+  {
+    id: 'sports',
+    title: '⚽ Dünya & Canlı Spor Kanalları',
+    subtitle: 'Uluslararası Canlı Maç, Futbol & Motorsporları',
+    url: 'https://iptv-org.github.io/iptv/categories/sports.m3u'
+  },
+  {
+    id: 'movies',
+    title: '🎬 Sinema & Dizi Kanalları',
+    subtitle: '24 Saat Kesintisiz Film ve Yabancı Dizi Yayınları',
+    url: 'https://iptv-org.github.io/iptv/categories/movies.m3u'
+  },
+  {
+    id: 'news',
+    title: '📰 Canlı Haber Kanalları',
+    subtitle: 'Türkiye ve Dünya Gündemi Canlı Yayınları',
+    url: 'https://iptv-org.github.io/iptv/categories/news.m3u'
+  }
+];
 
 export function IptvModal({ 
   isOpen, 
@@ -24,7 +51,8 @@ export function IptvModal({
   onSelectChannel, 
   onAddToPlaylist 
 }) {
-  const [url, setUrl] = useState(DEFAULT_IPTV_URL);
+  const [activePreset, setActivePreset] = useState('tr');
+  const [url, setUrl] = useState(PRESET_SOURCES[0].url);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Tümü');
@@ -35,14 +63,14 @@ export function IptvModal({
   const [isLoaded, setIsLoaded] = useState(false);
   const [customServerUrl, setCustomServerUrl] = useState(() => localStorage.getItem('synchro_server_url') || '');
 
-  // Auto load on initial open if not loaded
+  // Auto load on initial open
   useEffect(() => {
     if (isOpen && !isLoaded) {
-      handleLoadPlaylist();
+      loadPlaylist(url);
     }
   }, [isOpen]);
 
-  // Search trigger when query or category changes
+  // Search or category filter debounce
   useEffect(() => {
     if (!isLoaded) return;
     const timer = setTimeout(() => {
@@ -51,14 +79,15 @@ export function IptvModal({
     return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory]);
 
-  const handleLoadPlaylist = async () => {
-    if (!url.trim()) return;
+  const loadPlaylist = async (targetUrl) => {
+    const listUrl = (targetUrl || url || '').trim();
+    if (!listUrl) return;
     setLoading(true);
     setError(null);
 
     try {
       const serverBase = getServerUrl();
-      const res = await fetch(`${serverBase}/api/iptv/parse?url=${encodeURIComponent(url.trim())}`);
+      const res = await fetch(`${serverBase}/api/iptv/parse?url=${encodeURIComponent(listUrl)}`);
       const contentType = res.headers.get('content-type') || '';
       if (!res.ok || contentType.includes('text/html')) {
         setError('BACKEND_NOT_CONFIGURED');
@@ -70,6 +99,7 @@ export function IptvModal({
       if (data.success) {
         setIsLoaded(true);
         setCategories(['Tümü', ...(data.categories || [])]);
+        setSelectedCategory('Tümü');
         setChannels(data.channels || []);
         setTotalMatches(data.totalChannels || 0);
         sounds.playPop();
@@ -107,6 +137,12 @@ export function IptvModal({
     }
   };
 
+  const handleSelectPreset = (p) => {
+    setActivePreset(p.id);
+    setUrl(p.url);
+    loadPlaylist(p.url);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -123,11 +159,11 @@ export function IptvModal({
               <h2 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                 Canlı Maç & IPTV Kanal Rehberi
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-zinc-100 border border-zinc-700">
-                  {totalMatches} Kanal
+                  {totalMatches} Kanal Aktif
                 </span>
               </h2>
               <p className="text-[11px] text-zinc-400">
-                beIN Sports, Exxen, S Sport, Smart Spor ve dünya kanallarını tek tıkla odaya yayınla
+                A Spor, 24 TV, Haber ve Dünya Spor kanallarını tek tıkla odaya açın
               </p>
             </div>
           </div>
@@ -140,28 +176,65 @@ export function IptvModal({
           </button>
         </div>
 
-        {/* PLAYLIST URL INPUT BAR */}
-        <div className="p-3.5 bg-black/40 border-b border-zinc-800 flex items-center gap-2 flex-wrap">
-          <input
-            type="text"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="IPTV / Xtream M3U Linki (http://.../get.php?...)"
-            className="flex-1 min-w-[280px] bg-white/5 border border-zinc-800 rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
-          />
+        {/* PRESET PLAYLIST SELECTION TABS */}
+        <div className="p-2.5 bg-black/50 border-b border-zinc-800 flex items-center gap-2 overflow-x-auto">
+          {PRESET_SOURCES.map((p) => {
+            const isSelected = activePreset === p.id;
+            return (
+              <button
+                key={p.id}
+                onClick={() => handleSelectPreset(p)}
+                className={`px-3 py-2 rounded-md text-left transition whitespace-nowrap flex flex-col shrink-0 border ${
+                  isSelected
+                    ? 'bg-emerald-500/20 border-emerald-500 text-white'
+                    : 'bg-white/5 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+                }`}
+              >
+                <span className="text-xs font-bold leading-tight">{p.title}</span>
+                <span className="text-[10px] text-zinc-500 mt-0.5">{p.subtitle}</span>
+              </button>
+            );
+          })}
+
           <button
-            onClick={handleLoadPlaylist}
-            disabled={loading}
-            className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shrink-0"
+            onClick={() => {
+              setActivePreset('custom');
+              setUrl('');
+            }}
+            className={`px-3 py-2 rounded-md text-left transition whitespace-nowrap flex flex-col shrink-0 border ${
+              activePreset === 'custom'
+                ? 'bg-emerald-500/20 border-emerald-500 text-white'
+                : 'bg-white/5 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'
+            }`}
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            <span>{loading ? 'Yükleniyor...' : 'Listeyi Yenile'}</span>
+            <span className="text-xs font-bold leading-tight">⚙️ Özel M3U / Xtream</span>
+            <span className="text-[10px] text-zinc-500 mt-0.5">Kendi IPTV linkinizi yapıştırın</span>
           </button>
         </div>
 
-        {/* SEARCH & CATEGORY FILTERS BAR */}
+        {/* CUSTOM URL INPUT BAR (VISIBLE ON CUSTOM OR REFRESH) */}
+        {activePreset === 'custom' && (
+          <div className="p-3 bg-black/30 border-b border-zinc-800 flex items-center gap-2 flex-wrap">
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="IPTV / Xtream M3U Linki (https://... veya http://.../get.php?...)"
+              className="flex-1 min-w-[280px] bg-white/5 border border-zinc-800 rounded-md px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition font-mono"
+            />
+            <button
+              onClick={() => loadPlaylist(url)}
+              disabled={loading}
+              className="px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shrink-0"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              <span>{loading ? 'Yükleniyor...' : 'Listeyi Yükle'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* SEARCH & DYNAMIC CATEGORY FILTERS */}
         <div className="p-3 bg-white/[0.01] border-b border-zinc-800 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center justify-between">
-          
           {/* Search Box */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-2.5 w-4 h-4 text-zinc-500" />
@@ -169,14 +242,14 @@ export function IptvModal({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Kanal ara (Örn: bein, exxen, spor, tr, cbc)..."
+              placeholder="Kanal ara (Örn: spor, haber, 24, a2, trt, tv)..."
               className="w-full bg-white/5 border border-zinc-800 rounded-md pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
             />
           </div>
 
-          {/* Quick Sport Filters */}
+          {/* Dynamic Categories */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
-            {['Tümü', 'TR ⚜️ beIN SPORTS', 'TR ⚜️ EXXEN SPORTS', 'TR ⚜️ S SPORT', 'TR ⚜️ TABII SPOR', 'SPOR & CANLI MAÇ'].map((cat) => (
+            {categories.slice(0, 8).map((cat) => (
               <button
                 key={cat}
                 onClick={() => {
@@ -185,7 +258,7 @@ export function IptvModal({
                 }}
                 className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap transition border ${
                   selectedCategory === cat
-                    ? 'bg-emerald-500/20 border-emerald-500 text-zinc-100 shadow-sm '
+                    ? 'bg-emerald-500/20 border-emerald-500 text-zinc-100 shadow-sm'
                     : 'bg-white/5 border-zinc-800 text-zinc-400 hover:text-white hover:border-white/15'
                 }`}
               >
@@ -193,7 +266,6 @@ export function IptvModal({
               </button>
             ))}
           </div>
-
         </div>
 
         {/* ERROR STATE */}
@@ -204,14 +276,14 @@ export function IptvModal({
               Render Backend Sunucunuzu Bağlayın
             </div>
             <p className="text-[11px] text-zinc-300 leading-relaxed">
-              Siteniz Vercel'de çalışıyor, ancak IPTV motoru ve canlı maç sunucusu Render'dadır. Render üzerinde açtığınız Web Service linkini (örn: <code className="bg-black/40 px-1 py-0.5 rounded text-amber-300 font-mono">https://synchro-backend.onrender.com</code>) buraya yapıştırıp kaydedin:
+              Siteniz Vercel'de çalışıyor, ancak IPTV motoru ve canlı maç sunucusu Render'dadır. Render üzerinde açtığınız Web Service linkini (örn: <code className="bg-black/40 px-1 py-0.5 rounded text-amber-300 font-mono">https://iboizle.onrender.com</code>) buraya yapıştırıp kaydedin:
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <input
                 type="text"
                 value={customServerUrl}
                 onChange={(e) => setCustomServerUrl(e.target.value)}
-                placeholder="https://your-backend.onrender.com"
+                placeholder="https://iboizle.onrender.com"
                 className="flex-1 bg-black/40 border border-zinc-800 rounded-md px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 font-mono"
               />
               <button
@@ -229,22 +301,28 @@ export function IptvModal({
               </button>
             </div>
           </div>
-        ) : error && (
-          <div className="p-3 m-3 bg-red-950/50 border border-zinc-700 rounded-md text-xs text-red-200">
-            {error}
+        ) : error ? (
+          <div className="p-4 m-3 bg-red-950/60 border border-zinc-700 rounded-md text-xs text-red-200 flex items-center justify-between">
+            <span>{error}</span>
+            <button
+              onClick={() => loadPlaylist(url)}
+              className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-white font-bold text-xs"
+            >
+              Tekrar Dene
+            </button>
           </div>
-        )}
+        ) : null}
 
-        {/* CHANNELS GRID CONTAINER */}
-        <div className="flex-1 overflow-y-auto p-4">
+        {/* CHANNELS GRID */}
+        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
           {loading ? (
-            <div className="h-full flex flex-col items-center justify-center gap-3 text-zinc-400 py-16">
-              <Loader2 className="w-8 h-8 text-zinc-300 animate-spin" />
-              <p className="text-xs">IPTV kanalları taranıyor ve optimize ediliyor...</p>
+            <div className="h-full flex flex-col items-center justify-center gap-3 text-zinc-400">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+              <span className="text-xs font-medium">Kanal listesi taranıyor ve güncelleniyor...</span>
             </div>
           ) : channels.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center gap-2 text-zinc-500 py-16 text-center">
-              <Tv className="w-10 h-10 stroke-[1.5]" />
+            <div className="h-full flex flex-col items-center justify-center gap-2 text-zinc-500 text-center">
+              <Tv className="w-10 h-10 opacity-30" />
               <p className="text-xs">Aramanıza uygun kanal bulunamadı.</p>
               <button
                 onClick={() => { setSearchQuery(''); setSelectedCategory('Tümü'); }}
@@ -258,7 +336,7 @@ export function IptvModal({
               {channels.map((ch) => (
                 <div
                   key={ch.id}
-                  className="bg-white/5 border border-zinc-800 hover:border-zinc-700 rounded-md p-3 flex flex-col justify-between gap-2.5 transition group hover:shadow-lg hover:"
+                  className="bg-white/5 border border-zinc-800 hover:border-zinc-700 rounded-md p-3 flex flex-col justify-between gap-2.5 transition group hover:shadow-lg"
                 >
                   <div className="flex items-start gap-2.5">
                     {/* Logo or placeholder */}
@@ -276,7 +354,7 @@ export function IptvModal({
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      <h4 className="text-xs font-bold text-white truncate group-hover:text-zinc-100 transition" title={ch.title}>
+                      <h4 className="text-xs font-bold text-white truncate group-hover:text-emerald-400 transition" title={ch.title}>
                         {ch.title}
                       </h4>
                       <span className="text-[10px] text-zinc-400 truncate block mt-0.5">

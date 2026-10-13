@@ -32,16 +32,22 @@ const MEDIA_TYPES = [
 
 const PRESETS = [
   {
-    title: 'Canlı HLS / Spor Test Yayını',
-    url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+    title: '🇹🇷 A Spor Canlı HD',
+    url: 'https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/aspor/aspor.m3u8',
     type: 'hls',
     isLive: true
   },
   {
-    title: 'Tears of Steel (Ultra HD HLS)',
-    url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+    title: '🇹🇷 24 TV Haber HD',
+    url: 'https://turkmedya-live.ercdn.net/tv24/tv24.m3u8',
     type: 'hls',
-    isLive: false
+    isLive: true
+  },
+  {
+    title: '⚽ HLS Spor Test Akışı',
+    url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+    type: 'hls',
+    isLive: true
   },
   {
     title: 'Big Buck Bunny (MP4 Video)',

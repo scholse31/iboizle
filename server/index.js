@@ -207,6 +207,59 @@ app.get('/api/proxy', (req, res) => {
   handleProxyStream(targetUrl, req, res, 0);
 });
 
+// M3U Playlist Parser for Standard IPTV Lists
+function parseM3UPlaylist(m3uText) {
+  const channels = [];
+  const categoriesSet = new Set(['Tümü']);
+  const lines = m3uText.split(/\r?\n/);
+  let currentChannel = null;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    if (line.startsWith('#EXTINF:')) {
+      const titleMatch = line.match(/,(.+)$/);
+      const title = titleMatch ? titleMatch[1].trim() : 'Kanal';
+      const logoMatch = line.match(/tvg-logo=["']([^"']+)["']/i);
+      const logo = logoMatch ? logoMatch[1] : '';
+      const groupMatch = line.match(/group-title=["']([^"']+)["']/i);
+      let group = groupMatch ? groupMatch[1].trim() : 'Genel';
+
+      const upper = title.toUpperCase();
+      if (upper.includes('SPOR') || upper.includes('SPORT') || group.toLowerCase().includes('sport')) {
+        group = '⚽ Spor';
+      } else if (group.toLowerCase().includes('news') || upper.includes('HABER') || upper.includes('24 TV') || upper.includes('A HABER')) {
+        group = '📰 Haber';
+      } else if (group.toLowerCase().includes('music') || upper.includes('KRAL') || upper.includes('POWER')) {
+        group = '🎵 Müzik';
+      } else if (group.toLowerCase().includes('movie') || group.toLowerCase().includes('film') || upper.includes('SİNEMA')) {
+        group = '🎬 Sinema & Film';
+      } else if (group.toLowerCase().includes('entertainment') || group.toLowerCase().includes('general')) {
+        group = '📺 Ulusal & Dizi';
+      }
+
+      categoriesSet.add(group);
+      currentChannel = {
+        id: 'm3u-' + (channels.length + 1),
+        title,
+        group,
+        logo
+      };
+    } else if (currentChannel && (line.startsWith('http://') || line.startsWith('https://'))) {
+      currentChannel.streamUrl = line;
+      currentChannel.proxiedUrl = `/api/proxy?url=${encodeURIComponent(line)}`;
+      channels.push(currentChannel);
+      currentChannel = null;
+    }
+  }
+
+  return {
+    channels,
+    categories: Array.from(categoriesSet)
+  };
+}
+
 // In-Memory IPTV Playlist Cache
 const iptvCache = new Map(); // url -> { channels, categories, updatedAt }
 
@@ -585,7 +638,7 @@ app.get('/api/film/extract', (req, res) => {
   }
 });
 
-// Embed Proxy: Strips X-Frame-Options and Content-Security-Policy to allow embedding any movie site inside our synced player!
+// Embed Proxy: Strips X-Frame-Options and Content-Security-Policy to allow embedding movie sites
 app.get('/api/embed-proxy', (req, res) => {
   let targetUrl = req.query.url;
   if (!targetUrl) return res.status(400).send('Missing url parameter');
@@ -598,7 +651,12 @@ app.get('/api/embed-proxy', (req, res) => {
       targetUrl,
       {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+          'X-Forwarded-For': '88.255.142.10',
+          'X-Real-IP': '88.255.142.10',
+          'CF-IPCountry': 'TR',
           'Referer': parsed.origin
         },
         timeout: 20000
@@ -607,6 +665,36 @@ app.get('/api/embed-proxy', (req, res) => {
         if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && proxyRes.headers.location) {
           const redirectUrl = new URL(proxyRes.headers.location, targetUrl).href;
           return res.redirect(`/api/embed-proxy?url=${encodeURIComponent(redirectUrl)}`);
+        }
+
+        // Intercept 451 (Unavailable For Legal Reasons) or 403 bot blocks
+        if (proxyRes.statusCode === 451 || proxyRes.statusCode === 403) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(`
+            <!DOCTYPE html>
+            <html lang="tr">
+            <head>
+              <meta charset="UTF-8">
+              <style>
+                body { background: #0b0d14; color: #f1f5f9; font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; text-align: center; }
+                .card { max-width: 520px; background: #131722; border: 1px solid #334155; border-radius: 12px; padding: 28px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
+                h2 { color: #f87171; margin-top: 0; font-size: 1.25rem; }
+                p { color: #94a3b8; font-size: 0.875rem; line-height: 1.5; margin: 12px 0; }
+                .btn { display: inline-block; background: #8b5cf6; color: white; text-decoration: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-top: 14px; transition: 0.2s; }
+                .btn:hover { background: #7c3aed; }
+                .badge { background: #1e293b; border: 1px solid #475569; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 0.75rem; color: #38bdf8; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <h2>⚠️ Bu Site Sunucu Üzerinden Engellendi (451)</h2>
+                <p>Bu film sitesi yurtdışı sunucularına <b>451 Yasal Kısıtlama</b> veya Cloudflare bot koruması uygulamaktadır.</p>
+                <p><b>Çözüm:</b> Sitedeki filmi doğrudan kendi tarayıcınızda açıp yukarıdaki <span class="badge">📺 Synchro Film Çek</span> yer imi butonuyla videonun saf linkini alarak odaya yapıştırın.</p>
+                <a href="${targetUrl}" target="_blank" rel="noopener noreferrer" class="btn">Filmi Yeni Sekmede Aç ↗</a>
+              </div>
+            </body>
+            </html>
+          `);
         }
 
         // Strip headers that prevent embedding in iframe

@@ -20,7 +20,8 @@ import {
   Rocket,
   Heart,
   Gauge,
-  Zap
+  Zap,
+  Loader2
 } from 'lucide-react';
 import { socket, getServerUrl } from '../services/socket';
 import { sounds } from '../services/soundEffects';
@@ -51,6 +52,7 @@ export function VideoPlayer({
   });
   const [latencyInfo, setLatencyInfo] = useState({ buffer: 0, latency: 0 });
   const [hasError, setHasError] = useState(null);
+  const [isLoadingStream, setIsLoadingStream] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(media?.playbackRate || 1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
@@ -93,6 +95,7 @@ export function VideoPlayer({
         hlsRef.current.destroy();
         hlsRef.current = null;
       }
+      setIsLoadingStream(false);
       return;
     }
 
@@ -100,6 +103,15 @@ export function VideoPlayer({
     if (!video || !streamUrl) return;
 
     setHasError(null);
+    setIsLoadingStream(true);
+
+    // Stream timeout watchdog (8s timeout)
+    const timeoutTimer = setTimeout(() => {
+      if (video && video.readyState < 2 && !isPlaying) {
+        setHasError('Yayın sunucusu yanıt vermiyor veya sinyal yok. Yukarıdaki "Proxy: Açık/Kapalı" butonunu değiştirebilir veya listeden başka bir kanal seçebilirsiniz.');
+        setIsLoadingStream(false);
+      }
+    }, 8500);
 
     if (isHls && Hls.isSupported()) {
       if (hlsRef.current) {
@@ -126,6 +138,9 @@ export function VideoPlayer({
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        clearTimeout(timeoutTimer);
+        setIsLoadingStream(false);
+        setHasError(null);
         if (media.playbackState === 'playing') {
           video.play().catch(() => {});
         }
@@ -135,12 +150,14 @@ export function VideoPlayer({
         if (data.fatal) {
           console.warn('HLS Fatal error:', data.type);
           if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-            setHasError('Ağ hatası veya CORS kısıtlaması. Lütfen yukarıdaki "CORS Proxy" butonunu açmayı deneyin.');
+            setHasError('Ağ hatası veya CORS kısıtlaması. Lütfen sağ üstteki "Proxy" butonuna basarak modu değiştirin.');
+            setIsLoadingStream(false);
             hls.startLoad();
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             hls.recoverMediaError();
           } else {
             hls.destroy();
+            setIsLoadingStream(false);
           }
         }
       });
@@ -159,17 +176,20 @@ export function VideoPlayer({
       }, 1000);
 
       return () => {
+        clearTimeout(timeoutTimer);
         clearInterval(statsInterval);
         hls.destroy();
       };
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Native Safari HLS
       video.src = streamUrl;
+      return () => clearTimeout(timeoutTimer);
     } else {
       // Standard video format (MP4 / WebM)
       video.src = streamUrl;
+      return () => clearTimeout(timeoutTimer);
     }
-  }, [streamUrl, isHls, isYouTube, isScreenShare]);
+  }, [streamUrl, isHls, isYouTube, isScreenShare, useProxy]);
 
   // -------------------------------------------------------------
   // SCREEN SHARE STREAM BINDING
@@ -422,25 +442,41 @@ export function VideoPlayer({
           />
         </div>
       ) : (
-        <video
-          ref={videoRef}
-          className="w-full h-full object-contain cursor-pointer"
-          playsInline
-          autoPlay
-          onTimeUpdate={() => {
-            if (videoRef.current) {
-              setCurrentTime(videoRef.current.currentTime);
-            }
-          }}
-          onDurationChange={() => {
-            if (videoRef.current) {
-              setDuration(videoRef.current.duration);
-            }
-          }}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          onClick={handleTogglePlay}
-        />
+        <>
+          {isLoadingStream && !hasError && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 z-10 pointer-events-none">
+              <Loader2 className="w-10 h-10 animate-spin text-purple-500 mb-2" />
+              <p className="text-xs text-zinc-200 font-semibold">Yayın Sinyali Alınıyor...</p>
+              <span className="text-[11px] text-zinc-400 mt-1 max-w-xs truncate">{media?.title || 'Canlı Akış'}</span>
+            </div>
+          )}
+          <video
+            ref={videoRef}
+            className="w-full h-full object-contain cursor-pointer"
+            playsInline
+            autoPlay
+            onWaiting={() => setIsLoadingStream(true)}
+            onPlaying={() => {
+              setIsLoadingStream(false);
+              setIsPlaying(true);
+              setHasError(null);
+            }}
+            onLoadedData={() => setIsLoadingStream(false)}
+            onTimeUpdate={() => {
+              if (videoRef.current) {
+                setCurrentTime(videoRef.current.currentTime);
+              }
+            }}
+            onDurationChange={() => {
+              if (videoRef.current) {
+                setDuration(videoRef.current.duration);
+              }
+            }}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            onClick={handleTogglePlay}
+          />
+        </>
       )}
 
       {/* PLAYER HOVER CONTROLS BAR (FOR NON-YOUTUBE OR NATIVE STREAMS) */}
